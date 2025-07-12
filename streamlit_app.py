@@ -8,6 +8,8 @@ from sentence_transformers import SentenceTransformer
 import faiss
 from rank_bm25 import BM25Okapi
 from typing import List, Dict, Any
+import torch
+import os
 
 # Configure page
 st.set_page_config(
@@ -63,20 +65,56 @@ st.markdown("""
 class StreamlitPDFProcessor:
     def __init__(self):
         if 'pdf_processor' not in st.session_state:
-            with st.spinner("Loading AI models..."):
-                st.session_state.pdf_processor = self._initialize_models()
+            st.session_state.pdf_processor = self._initialize_empty_processor()
     
-    def _initialize_models(self):
-        """Initialize the PDF processing models"""
+    def _initialize_empty_processor(self):
+        """Initialize processor without loading models"""
         return {
-            'embedding_model': SentenceTransformer('sentence-transformers/all-mpnet-base-v2'),
+            'embedding_model': None,
             'chunks': [],
             'embeddings': None,
             'index': None,
             'bm25': None,
             'tokenized_chunks': [],
-            'processed': False
+            'processed': False,
+            'models_loaded': False
         }
+    
+    def _load_models(self):
+        """Load AI models with proper device handling"""
+        processor = st.session_state.pdf_processor
+        
+        if processor['models_loaded']:
+            return
+        
+        try:
+            # Set device to CPU for Streamlit Cloud compatibility
+            os.environ['CUDA_VISIBLE_DEVICES'] = ''
+            torch.set_default_device('cpu')
+            
+            with st.spinner("Loading AI models..."):
+                # Use a smaller, faster model for deployment
+                model_name = 'sentence-transformers/all-MiniLM-L6-v2'
+                processor['embedding_model'] = SentenceTransformer(
+                    model_name, 
+                    device='cpu'
+                )
+                processor['models_loaded'] = True
+                st.success("✅ AI models loaded successfully")
+                
+        except Exception as e:
+            st.error(f"Error loading models: {e}")
+            # Fallback to even simpler model
+            try:
+                processor['embedding_model'] = SentenceTransformer(
+                    'sentence-transformers/paraphrase-MiniLM-L3-v2',
+                    device='cpu'
+                )
+                processor['models_loaded'] = True
+                st.warning("⚠️ Using fallback model for compatibility")
+            except Exception as e2:
+                st.error(f"Failed to load fallback model: {e2}")
+                processor['models_loaded'] = False
     
     def extract_text_from_pdf(self, pdf_file) -> str:
         """Extract text using multiple methods and choose the best result"""
@@ -203,6 +241,13 @@ class StreamlitPDFProcessor:
         """Process PDF and prepare for question answering"""
         processor = st.session_state.pdf_processor
         
+        # Load models first if not loaded
+        if not processor['models_loaded']:
+            self._load_models()
+            if not processor['models_loaded']:
+                st.error("Cannot process PDF: Models failed to load")
+                return False
+        
         with st.spinner("Extracting text from PDF..."):
             text = self.extract_text_from_pdf(pdf_file)
             if not text:
@@ -239,7 +284,7 @@ class StreamlitPDFProcessor:
         """Advanced hybrid search combining semantic and keyword matching"""
         processor = st.session_state.pdf_processor
         
-        if not processor['processed']:
+        if not processor['processed'] or not processor['models_loaded']:
             return []
         
         # 1. Semantic search
