@@ -1,15 +1,13 @@
 import streamlit as st
 import PyPDF2
-import io
 import numpy as np
 import pdfplumber
-import fitz  # PyMuPDF
+import fitz
 import re
 from sentence_transformers import SentenceTransformer
 import faiss
 from rank_bm25 import BM25Okapi
 from typing import List, Dict, Any
-import time
 
 # Configure page
 st.set_page_config(
@@ -70,7 +68,7 @@ class StreamlitPDFProcessor:
     
     def _initialize_models(self):
         """Initialize the PDF processing models"""
-        processor_data = {
+        return {
             'embedding_model': SentenceTransformer('sentence-transformers/all-mpnet-base-v2'),
             'chunks': [],
             'embeddings': None,
@@ -79,7 +77,6 @@ class StreamlitPDFProcessor:
             'tokenized_chunks': [],
             'processed': False
         }
-        return processor_data
     
     def extract_text_from_pdf(self, pdf_file) -> str:
         """Extract text using multiple methods and choose the best result"""
@@ -151,7 +148,7 @@ class StreamlitPDFProcessor:
         """Create overlapping chunks with better context preservation"""
         # Split by pages first if page markers exist
         if '[Page ' in text:
-            page_sections = re.split(r'\\[Page \\d+\\]', text)
+            page_sections = re.split(r'\[Page \d+\]', text)
             page_sections = [section.strip() for section in page_sections if section.strip()]
         else:
             page_sections = [text]
@@ -160,9 +157,9 @@ class StreamlitPDFProcessor:
         
         for section in page_sections:
             # Split by paragraphs
-            paragraphs = [p.strip() for p in section.split('\\n\\n') if p.strip()]
+            paragraphs = [p.strip() for p in section.split('\n\n') if p.strip()]
             if not paragraphs:
-                paragraphs = [p.strip() for p in section.split('\\n') if p.strip()]
+                paragraphs = [p.strip() for p in section.split('\n') if p.strip()]
             
             current_chunk = ""
             
@@ -178,7 +175,7 @@ class StreamlitPDFProcessor:
                             overlap_words = words[-min(overlap//5, len(words)//2):]
                             current_chunk = ' '.join(overlap_words) + ' ' + sentence
                         else:
-                            current_chunk = current_chunk + ' ' + sentence if current_chunk else sentence
+                            current_chunk = (current_chunk + ' ' + sentence) if current_chunk else sentence
                 else:
                     # Add whole paragraph
                     if len(current_chunk + ' ' + paragraph) > chunk_size and current_chunk:
@@ -188,7 +185,7 @@ class StreamlitPDFProcessor:
                         overlap_words = words[-min(overlap//5, len(words)//2):]
                         current_chunk = ' '.join(overlap_words) + ' ' + paragraph
                     else:
-                        current_chunk = current_chunk + ' ' + paragraph if current_chunk else paragraph
+                        current_chunk = (current_chunk + ' ' + paragraph) if current_chunk else paragraph
             
             # Add final chunk
             if current_chunk.strip():
