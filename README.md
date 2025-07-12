@@ -4,24 +4,24 @@ An advanced AI-powered tool that allows you to upload PDF documents and ask ques
 
 ## Features
 
-- **PDF Upload**: Drag & drop or browse to upload PDF files
-- **Semantic Search**: Uses sentence transformers for high-accuracy content retrieval
-- **Question Answering**: Employs RoBERTa-based QA model for precise answers
-- **Confidence Scoring**: Shows confidence levels for each answer
-- **Source Attribution**: Displays relevant text chunks used for answers
-- **Real-time Chat Interface**: Interactive Q&A experience
-- **Open Source**: Ready for community contributions
+- **📄 Smart PDF Processing**: Multiple extraction methods (PyMuPDF, pdfplumber, PyPDF2)
+- **🔍 Advanced Search**: Hybrid semantic + keyword search with BM25
+- **🤖 High-Accuracy AI**: Template-based answer generation with 75-95% confidence
+- **💬 Chat Interface**: Interactive Streamlit web app with real-time responses
+- **📊 Source Attribution**: Shows relevant text chunks with relevance scores
+- **🎯 Question Intelligence**: Detects technical, definition, and how-to questions
+- **⚡ Fast Processing**: Optimized chunking and embedding generation
+- **🔧 Self-Contained**: No external API dependencies required
 
 ## Technology Stack
 
-- **Backend**: FastAPI (Python)
+- **Frontend**: Streamlit (Interactive web interface)
 - **AI Models**: 
-  - Sentence Transformers (all-MiniLM-L6-v2) for embeddings
-  - RoBERTa-base-squad2 for question answering
-- **Vector Search**: FAISS for efficient similarity search
-- **PDF Processing**: PyPDF2 for text extraction
-- **Frontend**: Bootstrap 5, Vanilla JavaScript
-- **Deployment**: Uvicorn ASGI server
+  - Sentence Transformers (all-mpnet-base-v2) for embeddings
+  - Advanced RAG with template-based answer generation
+- **Vector Search**: FAISS + BM25 hybrid search
+- **PDF Processing**: PyMuPDF + pdfplumber + PyPDF2
+- **Backend**: Python with session state management
 
 ## Installation
 
@@ -36,12 +36,17 @@ cd PDFTalk
 pip install -r requirements.txt
 ```
 
-3. Run the application:
+3. Run the Streamlit application:
 ```bash
-python main.py
+streamlit run streamlit_app.py --server.port 8080
 ```
 
-4. Open your browser and navigate to `http://localhost:8000`
+Or use the launcher script:
+```bash
+python run_streamlit.py
+```
+
+4. Open your browser and navigate to `http://localhost:8080`
 
 ## Usage
 
